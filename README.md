@@ -1,6 +1,6 @@
 # Ride ticket price calculator for OpenRCT2
 
-This plugin allows you to calculate the maximum ticket price of any ride, either one in your park or one that's made up. It can also keep the ticket prices of selected rides at their maximum automatically.
+This plugin allows you to calculate the maximum ticket price of any ride, either one in your park or one that's made up. It can also keep the prices of selected rides and shops at their best value automatically.
 
 ![RTPC showcase](https://github.com/user-attachments/assets/36f6799d-d518-4a1f-9643-fc3ac6ec8462)
 
@@ -13,19 +13,29 @@ This plugin allows you to calculate the maximum ticket price of any ride, either
     - Multiple: more than one ride of this type is open (the ride itself included). For a made-up ride type, it is ticked when at least one ride of that type is already open.
     - Entrance: the park charges an entrance fee greater than 0.
     - You can still click the checkboxes to override the detected values (this switches to manual input).
-- Automatic ticket prices for the rides you select (see below).
-- Optional in-game message whenever a ticket price is changed automatically.
+- Automatic prices for the rides and shops you select (see below).
+- Optional in-game message whenever a price is changed automatically.
 
-## Automatic ticket prices
-Click **"Automatic ticket prices..."** at the bottom of the main window to open a list of all rides in your park.
+## Automatic prices
+At the bottom of the main window there are two buttons, each opening its own window for a better overview:
+- **"Auto ride prices..."** lists all rides.
+- **"Auto shop prices..."** lists all shops, stalls and toilets, together with the shop options.
 
-- Tick the checkbox of every ride whose ticket price should always be set to the maximum.
-- Each row shows the ride's current price and its maximum price (black = the ride is already at its maximum).
-- **Select all** / **Select none** change all rides at once, **Update now** applies the prices immediately. With many rides, use `<` and `>` to switch pages.
-- The prices are updated in the background once per in-game day, even when the window is closed. This keeps up with the ride getting older, new ratings, other rides of the same type opening and changes to the park entrance fee.
-- Tick **"Show in-game message when a price changes"** to get a message in the news bar each time a price is changed (e.g. *"Coaster: ticket price changed from £10.20 to £7.60"*). Clicking the message opens the ride. This is off by default.
-- Rides without ratings yet are skipped. If the park charges an entrance fee and ride prices are locked, no prices are changed and the window shows a warning.
-- Your selection and the message setting are saved with the park, so every park has its own settings.
+- In each window, tick the checkbox of every ride, shop or toilet whose prices should be set automatically:
+    - **Rides** get their maximum ticket price.
+    - **Shops and stalls** sell each item at exactly its value. Guests always buy an item at or below its value (if they want it) and become happier from it; above the value, unhappy guests start refusing. The value depends on the temperature in the park, e.g. a drink is worth £1.20 normally, £2.00 when it's warm (21 °C and above) and £1.00 when it's cold (11 °C and below). Both items of a shop are priced (e.g. umbrellas and maps at the information kiosk, see the options below).
+    - **Toilets** are set to £0.40. Guests only pay for a toilet if price × 40 is at most their toilet need (0–255). Guests start looking for a toilet at a need of 160, so they always pay £0.40; nobody pays more than £0.60.
+- Options (in the shop window):
+    - **"Also set the price of park maps"** (off by default): when off, park map prices are left as you set them, e.g. free maps so guests don't get lost. When on, maps are sold at their value (£0.70, £0.80 when cold).
+    - **"Umbrellas always at £20.00"** (off by default): when it rains, guests buy umbrellas at any price they can afford (they need at least £20.00 in their pocket). Without rain hardly anyone buys an umbrella at this price. When off, umbrellas are sold at their value (£3.50, £2.50 when warm, £5.00 when cold).
+- Each row shows the current price and the target price (black = already at the target). For shops this is the main item.
+- **Select all** / **Select none** change all entries of that window at once, **Update now** applies the prices immediately. With many entries, use `<` and `>` to switch pages.
+- The prices are updated in the background once per in-game day, even when the window is closed. This keeps up with the ride getting older, new ratings, other rides of the same type opening, changes to the park entrance fee and the temperature.
+- Tick **"Show in-game message when a price changes"** to get a message in the news bar each time a price is changed (e.g. *"Coaster: ticket price changed from £10.20 to £7.60"* or *"Burger Bar 1: Burger price changed from £1.90 to £2.20"*). Clicking the message opens the ride or shop. This is off by default and can be changed in either window.
+- Rides without ratings yet are skipped. If the park charges an entrance fee and ride prices are locked, only shops are updated and the ride window shows a warning. In parks without money nothing is changed.
+- If your park uses the same price for an item in all shops, changing it in one shop changes it everywhere (this is how the game works).
+- Custom climates may use other temperature limits than 21 °C / 11 °C; the plugin always uses the default limits.
+- Your selection and all options are saved with the park, so every park has its own settings.
 
 ## Installation
 

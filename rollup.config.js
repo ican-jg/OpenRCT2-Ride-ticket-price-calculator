@@ -11,7 +11,7 @@ const options =
 	/**
 	 * Change the file name of the output file here.
 	 */
-	filename: "Ride-ticket-price-calculator-v0.3.0.js",
+	filename: "Ride-ticket-price-calculator-v0.4.0.js",
 
 	/**
 	 * Determines in what build mode the plugin should be build. The default here takes
