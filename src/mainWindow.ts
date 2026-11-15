@@ -3,7 +3,7 @@ import { viewModel } from "./viewModel";
 import { einEnum } from "./commonTypes";
 import { onEINChange, onParkRideDropDownChange, onRideDropDownChange, onCheckboxChange, changeMode } from "./uiActions";
 import { activateTool, closeTool } from "./tool";
-import { autoPriceWindow } from "./autoPriceWindow";
+import { autoRidePriceWindow, autoShopPriceWindow } from "./autoPriceWindow";
 
 /**
  * User interface shape definition
@@ -156,12 +156,20 @@ export const mainWindow = window({
             scrollbars: "none"
         }),
         // AUTOMATIC PRICES
-        button({
-            text: "Automatic prices...",
-            height: 14,
-            tooltip: "Select rides and shops whose prices are set automatically",
-            onClick: () => autoPriceWindow.open()
-        }),
+        horizontal([
+            button({
+                text: "Auto ride prices...",
+                height: 14,
+                tooltip: "Select rides whose ticket price is set to the maximum automatically",
+                onClick: () => autoRidePriceWindow.open()
+            }),
+            button({
+                text: "Auto shop prices...",
+                height: 14,
+                tooltip: "Select shops, stalls and toilets whose prices are set automatically",
+                onClick: () => autoShopPriceWindow.open()
+            })
+        ]),
         // ABOUT BOX
         groupbox({
             content: [
