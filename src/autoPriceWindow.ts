@@ -1,5 +1,5 @@
 import { button, checkbox, Colour, compute, dropdown, horizontal, label, store, twoway, vertical, window, WindowTemplate, WritableStore } from "openrct2-flexui";
-import { canBeAutoPriced, getMaxPrice, getPriceTargets, getShowMessages, setShowMessages, isAutoPriced, onAutoPriceChange, ridePricesUnlocked, setAutoPriced, setAutoPricedMany, updateAllAutoPricedRides } from "./autoPrice";
+import { canBeAutoPriced, getMaxPrice, getPriceTargets, AutoPriceSetting, getSetting, setSetting, isAutoPriced, onAutoPriceChange, ridePricesUnlocked, setAutoPriced, setAutoPricedMany, updateAllAutoPricedRides } from "./autoPrice";
 
 /**
  * Window with a list of all rides in the park, each with a checkbox to select
@@ -29,7 +29,22 @@ let tickCounter = 0
 const currentPage = store<number>(0)
 const pageCount = store<number>(1)
 const warning = store<string>("")
-const showMessages = store<boolean>(false)
+/** Stores for the settings checkboxes */
+const settingStores: { [key in AutoPriceSetting]: WritableStore<boolean> } = {
+    showPriceMessages: store<boolean>(false),
+    priceParkMaps: store<boolean>(false),
+    umbrellasAtMax: store<boolean>(false)
+}
+
+/** Creates a checkbox for one of the automatic price settings */
+function settingCheckbox(key: AutoPriceSetting, text: string, tooltip: string) {
+    return checkbox({
+        text: text,
+        tooltip: tooltip,
+        isChecked: twoway(settingStores[key]),
+        onChange: (isChecked: boolean) => setSetting(key, isChecked)
+    })
+}
 
 /** Stores for every visible row in the list */
 const rows: Array<{
@@ -162,7 +177,8 @@ export const autoPriceWindow: WindowTemplate = window({
     onOpen: () => {
         windowIsOpen = true
         tickCounter = 0
-        showMessages.set(getShowMessages())
+        let key: AutoPriceSetting
+        for (key in settingStores) settingStores[key].set(getSetting(key))
         refresh()
     },
     onUpdate: () => {
@@ -173,6 +189,7 @@ export const autoPriceWindow: WindowTemplate = window({
     content: [
         label({ text: "Rides: set to the maximum ticket price." }),
         label({ text: "Shops: each item set to its value (depends on temperature)." }),
+        label({ text: "Toilets: set to " + formatPrice(4) + "." }),
         dropdown({
             items: filterOptions,
             selectedIndex: twoway(filter),
@@ -230,12 +247,12 @@ export const autoPriceWindow: WindowTemplate = window({
                 }
             })
         ]),
-        checkbox({
-            text: "Show in-game message when a price changes",
-            tooltip: "Posts a message in the news bar each time a ride's price is updated automatically",
-            isChecked: twoway(showMessages),
-            onChange: (isChecked: boolean) => setShowMessages(isChecked)
-        }),
+        settingCheckbox("priceParkMaps", "Also set the price of park maps",
+            "Off: park map prices are left as you set them (e.g. free maps). On: maps are sold at their value."),
+        settingCheckbox("umbrellasAtMax", "Umbrellas always at " + formatPrice(200),
+            "When it rains, guests buy umbrellas at any price they can afford. Without rain hardly anyone buys them at this price."),
+        settingCheckbox("showPriceMessages", "Show in-game message when a price changes",
+            "Posts a message in the news bar each time a price is updated automatically"),
         label({
             text: warning
         })

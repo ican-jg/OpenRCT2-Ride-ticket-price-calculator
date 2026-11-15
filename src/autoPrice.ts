@@ -4,7 +4,9 @@
  * Keeps a list of rides and shops/stalls (by their in-park id) that the user selected
  * for automatic pricing. Once per in-game day (and whenever the selection changes):
  * - rides get their maximum ticket price,
- * - shops/stalls get each item priced at its current value (depends on the temperature).
+ * - shops/stalls get each item priced at its current value (depends on the temperature),
+ *   with options for park maps (not changed by default) and umbrellas (always £20.00),
+ * - toilets get the highest price guests that look for a toilet always pay.
  * The selection is stored in the park file, so it survives saving and loading.
  */
 
@@ -12,22 +14,38 @@ import { calculateRidePrices } from "./calcFunctions"
 import { pluginName } from "./pluginName"
 import { getRideValueAge, hasMultipleOfRideType, parkChargesEntrance } from "./parkInfo"
 import { ageTableCol, rideAgeArray, rideDataArray, rideTableCol } from "./rideData"
-import { getShopItemName, getShopItemValue, isKnownShopItem } from "./shopItems"
+import { getShopItemName, getShopItemValue, isKnownShopItem, shopItemMap, shopItemUmbrella } from "./shopItems"
 
 /** Key used in the park storage for the list of auto priced ride ids */
 const storageKey = "autoPricedRides"
 
-/** Key used in the park storage for the "show messages" setting */
-const showMessagesKey = "showPriceMessages"
+/** Boolean settings of the automatic prices, with their key in the park storage */
+export type AutoPriceSetting = "showPriceMessages" | "priceParkMaps" | "umbrellasAtMax"
+const settingDefaults: { [key in AutoPriceSetting]: boolean } = {
+    showPriceMessages: false,
+    priceParkMaps: false,
+    umbrellasAtMax: false
+}
+const settings: { [key in AutoPriceSetting]: boolean } = {
+    showPriceMessages: false,
+    priceParkMaps: false,
+    umbrellasAtMax: false
+}
+
+/** In-game ride type of toilets */
+const toiletRideType = 36
+
+/**
+ * Price of toilets: guests only pay when price × 40 ≤ their toilet need (0-255),
+ * and they start looking for a toilet at a need of 160, so £0.40 is always paid by them.
+ */
+const toiletPrice = 4
 
 /** Highest ticket price the game accepts (£20.00, in money units of 0.10) */
 const maxRidePrice = 200
 
 /** In-park ids of rides that get their price updated automatically */
 let autoPricedRides: number[] = []
-
-/** When true, an in-game message is posted whenever a price is changed automatically */
-let showMessages = false
 
 /** Listeners that want to know when the selection or prices changed (e.g. UI) */
 const changeListeners: Array<() => void> = []
@@ -43,7 +61,10 @@ function loadSelection(): void {
     const storage = getStorage()
     const stored = storage ? storage.get<number[]>(storageKey, []) : []
     autoPricedRides = stored ? stored.slice() : []
-    showMessages = storage ? storage.get<boolean>(showMessagesKey, false) : false
+    let key: AutoPriceSetting
+    for (key in settingDefaults) {
+        settings[key] = storage ? storage.get<boolean>(key, settingDefaults[key]) : settingDefaults[key]
+    }
 }
 
 /** Saves the selection to the park storage */
@@ -59,17 +80,19 @@ function notifyChange(): void {
     }
 }
 
-/** @returns true when in-game messages for automatic price changes are enabled */
-export function getShowMessages(): boolean {
-    return showMessages
+/** @returns the current value of a setting */
+export function getSetting(key: AutoPriceSetting): boolean {
+    return settings[key]
 }
 
-/** Enables or disables in-game messages for automatic price changes */
-export function setShowMessages(enabled: boolean): void {
-    if (showMessages === enabled) return
-    showMessages = enabled
+/** Changes a setting, saves it with the park and applies prices again if needed */
+export function setSetting(key: AutoPriceSetting, enabled: boolean): void {
+    if (settings[key] === enabled) return
+    settings[key] = enabled
     const storage = getStorage()
-    if (storage) storage.set(showMessagesKey, enabled)
+    if (storage) storage.set(key, enabled)
+    if (key !== "showPriceMessages") updateAllAutoPricedRides()
+    notifyChange()
 }
 
 /** Formats a price in game money units */
@@ -165,9 +188,15 @@ export interface PriceTarget {
     label: string
 }
 
+/** @returns true when the ride is a toilet block */
+function isToilet(ride: Ride): boolean {
+    return ride.classification == "facility" && ride.type == toiletRideType
+}
+
 /** @returns true when the plugin can price this ride or shop automatically */
 export function canBeAutoPriced(ride: Ride): boolean {
     if (ride.classification == "ride") return true
+    if (isToilet(ride)) return true
     if (ride.classification == "stall") {
         return isKnownShopItem(ride.object.shopItem) || isKnownShopItem(ride.object.shopItemSecondary)
     }
@@ -187,11 +216,16 @@ export function getPriceTargets(ride: Ride): PriceTarget[] {
         if (maxPrice !== undefined && ridePricesUnlocked()) {
             targets.push({ priceIndex: 0, price: maxPrice, label: "ticket" })
         }
+    } else if (isToilet(ride)) {
+        targets.push({ priceIndex: 0, price: toiletPrice, label: "Toilet" })
     } else if (ride.classification == "stall") {
         const items = [ride.object.shopItem, ride.object.shopItemSecondary]
         for (let i = 0; i < items.length; i++) {
-            const value = getShopItemValue(items[i])
-            if (value === undefined || i >= ride.price.length) continue
+            if (i >= ride.price.length) continue
+            if (items[i] === shopItemMap && !settings.priceParkMaps) continue
+            let value = getShopItemValue(items[i])
+            if (items[i] === shopItemUmbrella && settings.umbrellasAtMax) value = maxRidePrice
+            if (value === undefined) continue
             targets.push({ priceIndex: i, price: Math.min(maxRidePrice, value), label: getShopItemName(items[i]) })
         }
     }
@@ -227,7 +261,7 @@ function updateRidePrice(rideId: number): boolean {
         changed = true
         const args = { ride: rideId, price: target.price, isPrimaryPrice: target.priceIndex === 0 }
         context.executeAction("ridesetprice", args, result => {
-            if (!showMessages || (result && result.error)) return
+            if (!settings.showPriceMessages || (result && result.error)) return
             const what = isShop ? `${target.label} price` : "ticket price"
             park.postMessage({
                 type: "attraction",

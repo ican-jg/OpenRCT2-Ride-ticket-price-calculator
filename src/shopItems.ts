@@ -55,6 +55,10 @@ export const shopItemData: { [item: number]: [string, number, number, number] } 
     49: ["Roast sausage", 16, 16, 20], // roastSausage
 }
 
+/** Shop item ids with special options */
+export const shopItemMap = 2
+export const shopItemUmbrella = 4
+
 /** Shop item id the game uses for "no item" */
 export const noShopItem = 255
 
