@@ -1,5 +1,5 @@
-import { button, checkbox, Colour, compute, horizontal, label, store, vertical, window, WindowTemplate, WritableStore } from "openrct2-flexui";
-import { getMaxPrice, isAutoPriced, onAutoPriceChange, ridePricesUnlocked, setAutoPriced, setAutoPricedMany, updateAllAutoPricedRides } from "./autoPrice";
+import { button, checkbox, Colour, compute, horizontal, label, store, twoway, vertical, window, WindowTemplate, WritableStore } from "openrct2-flexui";
+import { getMaxPrice, getShowMessages, setShowMessages, isAutoPriced, onAutoPriceChange, ridePricesUnlocked, setAutoPriced, setAutoPricedMany, updateAllAutoPricedRides } from "./autoPrice";
 
 /**
  * Window with a list of all rides in the park, each with a checkbox to select
@@ -24,6 +24,7 @@ let tickCounter = 0
 const currentPage = store<number>(0)
 const pageCount = store<number>(1)
 const warning = store<string>("")
+const showMessages = store<boolean>(false)
 
 /** Stores for every visible row in the list */
 const rows: Array<{
@@ -145,6 +146,7 @@ export const autoPriceWindow: WindowTemplate = window({
     onOpen: () => {
         windowIsOpen = true
         tickCounter = 0
+        showMessages.set(getShowMessages())
         refresh()
     },
     onUpdate: () => {
@@ -206,6 +208,12 @@ export const autoPriceWindow: WindowTemplate = window({
                 }
             })
         ]),
+        checkbox({
+            text: "Show in-game message when a price changes",
+            tooltip: "Posts a message in the news bar each time a ride's price is updated automatically",
+            isChecked: twoway(showMessages),
+            onChange: (isChecked: boolean) => setShowMessages(isChecked)
+        }),
         label({
             text: warning
         })

@@ -14,11 +14,17 @@ import { ageTableCol, rideAgeArray, rideDataArray, rideTableCol } from "./rideDa
 /** Key used in the park storage for the list of auto priced ride ids */
 const storageKey = "autoPricedRides"
 
+/** Key used in the park storage for the "show messages" setting */
+const showMessagesKey = "showPriceMessages"
+
 /** Highest ticket price the game accepts (£20.00, in money units of 0.10) */
 const maxRidePrice = 200
 
 /** In-park ids of rides that get their price updated automatically */
 let autoPricedRides: number[] = []
+
+/** When true, an in-game message is posted whenever a price is changed automatically */
+let showMessages = false
 
 /** Listeners that want to know when the selection or prices changed (e.g. UI) */
 const changeListeners: Array<() => void> = []
@@ -34,6 +40,7 @@ function loadSelection(): void {
     const storage = getStorage()
     const stored = storage ? storage.get<number[]>(storageKey, []) : []
     autoPricedRides = stored ? stored.slice() : []
+    showMessages = storage ? storage.get<boolean>(showMessagesKey, false) : false
 }
 
 /** Saves the selection to the park storage */
@@ -47,6 +54,24 @@ function notifyChange(): void {
     for (let i = 0; i < changeListeners.length; i++) {
         changeListeners[i]()
     }
+}
+
+/** @returns true when in-game messages for automatic price changes are enabled */
+export function getShowMessages(): boolean {
+    return showMessages
+}
+
+/** Enables or disables in-game messages for automatic price changes */
+export function setShowMessages(enabled: boolean): void {
+    if (showMessages === enabled) return
+    showMessages = enabled
+    const storage = getStorage()
+    if (storage) storage.set(showMessagesKey, enabled)
+}
+
+/** Formats a price in game money units */
+function formatPrice(price: number): string {
+    return context.formatString("{CURRENCY2DP}", price)
 }
 
 /** Registers a callback that is called whenever the selection or the prices change */
@@ -163,9 +188,18 @@ function updateRidePrice(rideId: number): boolean {
     if (!ride) return false
     const newPrice = getMaxPrice(ride)
     if (newPrice === undefined) return false
-    if (ride.price.length > 0 && ride.price[0] === newPrice) return false
+    const oldPrice = ride.price.length > 0 ? ride.price[0] : 0
+    if (oldPrice === newPrice) return false
 
-    context.executeAction("ridesetprice", { ride: rideId, price: newPrice, isPrimaryPrice: true })
+    const rideName = ride.name
+    context.executeAction("ridesetprice", { ride: rideId, price: newPrice, isPrimaryPrice: true }, result => {
+        if (!showMessages || (result && result.error)) return
+        park.postMessage({
+            type: "attraction",
+            subject: rideId,
+            text: `${rideName}: ticket price changed from ${formatPrice(oldPrice)} to ${formatPrice(newPrice)}`
+        })
+    })
     return true
 }
 
