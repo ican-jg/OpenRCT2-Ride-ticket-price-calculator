@@ -5,6 +5,7 @@ import { resetStats } from "./uiActions";
 import { activateTool } from "./tool";
 import { ridesInPark } from "./rideList";
 import { viewModel, } from "./viewModel";
+import { initAutoPricing } from "./autoPrice";
 
 /**
  * Starting point
@@ -50,6 +51,10 @@ export function startup()
 	{
 		ui.registerMenuItem(pluginName, () => onPluginGUIopen());
 	}
+
+	// Start the background price updates for the rides selected by the user
+	initAutoPricing()
+
 	context.setInterval(
 		function() {
 			if (windowOpen && viewModel.autoUpdate.get()) {
