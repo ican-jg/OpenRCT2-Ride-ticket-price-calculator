@@ -9,7 +9,7 @@ This plugin allows you to calculate the maximum ticket price of any ride, either
 - The current maximum ticket price will be highlighted in silver.
 - Automatic updates when any of the variables relating to the currently selected ride change.
 - Make up your own input to theorize the prices of any ride type with any stats.
-- Automatic ticket prices: open "Automatic ticket prices..." and tick the rides whose ticket price should be kept at the maximum. The prices are updated in the background once per in-game day (e.g. when the ride ages or its ratings change), even when the window is closed. The selection is saved with the park.
+- Automatic ticket prices: open "Automatic ticket prices..." and tick the rides whose ticket price should be kept at the maximum. The prices are updated in the background once per in-game day (e.g. when the ride ages or its ratings change), even when the window is closed. Optionally, an in-game message is shown whenever a price is changed (checkbox "Show in-game message when a price changes"). The selection and this setting are saved with the park.
 
 ## Installation
 
