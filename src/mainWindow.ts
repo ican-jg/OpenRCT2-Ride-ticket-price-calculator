@@ -15,7 +15,7 @@ export var windowOpen: boolean = false
 
 
 export const mainWindow = window({
-    title: "Ride ticket price calculator (v0.2.1)",
+    title: "Ride ticket price calculator (v0.3.0)",
     width: 300,
     height: 420,
     colours: [windowColour, windowColour],
@@ -137,11 +137,13 @@ export const mainWindow = window({
             content: [
                 checkbox({
                     text: "Multiple of this ride type in the park",
+                    tooltip: "Detected automatically: more than one open ride of this type. Click to override.",
                     isChecked: twoway(viewModel.multipleCheck),
                     onChange: () => onCheckboxChange()
                 }),
                 checkbox({
                     text: "Charge for the park entrance",
+                    tooltip: "Detected automatically from the park's entrance fee. Click to override.",
                     isChecked: twoway(viewModel.entranceFeeCheck),
                     onChange: () => onCheckboxChange()
                 })
