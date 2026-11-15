@@ -20,14 +20,18 @@ import { getShopItemName, getShopItemValue, isKnownShopItem, shopItemMap, shopIt
 const storageKey = "autoPricedRides"
 
 /** Boolean settings of the automatic prices, with their key in the park storage */
-export type AutoPriceSetting = "showPriceMessages" | "priceParkMaps" | "umbrellasAtMax"
+export type AutoPriceSetting = "showPriceMessages" | "showShopMessages" | "priceParkMaps" | "umbrellasAtMax"
+// "showPriceMessages" = messages for rides (key kept from v0.2.1 so existing parks keep their setting),
+// "showShopMessages" = messages for shops, stalls and toilets
 const settingDefaults: { [key in AutoPriceSetting]: boolean } = {
     showPriceMessages: false,
+    showShopMessages: false,
     priceParkMaps: false,
     umbrellasAtMax: false
 }
 const settings: { [key in AutoPriceSetting]: boolean } = {
     showPriceMessages: false,
+    showShopMessages: false,
     priceParkMaps: false,
     umbrellasAtMax: false
 }
@@ -91,7 +95,7 @@ export function setSetting(key: AutoPriceSetting, enabled: boolean): void {
     settings[key] = enabled
     const storage = getStorage()
     if (storage) storage.set(key, enabled)
-    if (key !== "showPriceMessages") updateAllAutoPricedRides()
+    if (key === "priceParkMaps" || key === "umbrellasAtMax") updateAllAutoPricedRides()
     notifyChange()
 }
 
@@ -261,7 +265,8 @@ function updateRidePrice(rideId: number): boolean {
         changed = true
         const args = { ride: rideId, price: target.price, isPrimaryPrice: target.priceIndex === 0 }
         context.executeAction("ridesetprice", args, result => {
-            if (!settings.showPriceMessages || (result && result.error)) return
+            const showMessage = isShop ? settings.showShopMessages : settings.showPriceMessages
+            if (!showMessage || (result && result.error)) return
             const what = isShop ? `${target.label} price` : "ticket price"
             park.postMessage({
                 type: "attraction",

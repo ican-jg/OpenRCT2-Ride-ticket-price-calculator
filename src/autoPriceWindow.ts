@@ -28,6 +28,7 @@ function formatPrice(price: number): string {
 /** Stores for the settings checkboxes, shared by both windows */
 const settingStores: { [key in AutoPriceSetting]: WritableStore<boolean> } = {
     showPriceMessages: store<boolean>(false),
+    showShopMessages: store<boolean>(false),
     priceParkMaps: store<boolean>(false),
     umbrellasAtMax: store<boolean>(false)
 }
@@ -253,8 +254,11 @@ function createListWindow(kind: ListKind): WindowTemplate {
                 })
             ]),
             ...options,
-            settingCheckbox("showPriceMessages", "Show in-game message when a price changes",
-                "Posts a message in the news bar each time a price is updated automatically (rides and shops)"),
+            kind === "rides"
+                ? settingCheckbox("showPriceMessages", "Show in-game message when a ride price changes",
+                    "Posts a message in the news bar each time a ride's ticket price is updated automatically")
+                : settingCheckbox("showShopMessages", "Show in-game message when a shop price changes",
+                    "Posts a message in the news bar each time a price of a shop, stall or toilet is updated automatically"),
             label({
                 text: warning
             })

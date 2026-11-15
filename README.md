@@ -14,7 +14,7 @@ This plugin allows you to calculate the maximum ticket price of any ride, either
     - Entrance: the park charges an entrance fee greater than 0.
     - You can still click the checkboxes to override the detected values (this switches to manual input).
 - Automatic prices for the rides and shops you select (see below).
-- Optional in-game message whenever a price is changed automatically.
+- Optional in-game messages whenever a price is changed automatically, separately for rides and shops.
 
 ## Automatic prices
 At the bottom of the main window there are two buttons, each opening its own window for a better overview:
@@ -31,7 +31,10 @@ At the bottom of the main window there are two buttons, each opening its own win
 - Each row shows the current price and the target price (black = already at the target). For shops this is the main item.
 - **Select all** / **Select none** change all entries of that window at once, **Update now** applies the prices immediately. With many entries, use `<` and `>` to switch pages.
 - The prices are updated in the background once per in-game day, even when the window is closed. This keeps up with the ride getting older, new ratings, other rides of the same type opening, changes to the park entrance fee and the temperature.
-- Tick **"Show in-game message when a price changes"** to get a message in the news bar each time a price is changed (e.g. *"Coaster: ticket price changed from £10.20 to £7.60"* or *"Burger Bar 1: Burger price changed from £1.90 to £2.20"*). Clicking the message opens the ride or shop. This is off by default and can be changed in either window.
+- In-game messages in the news bar can be switched on separately for rides and shops (both off by default):
+    - Ride window: **"Show in-game message when a ride price changes"**, e.g. *"Coaster: ticket price changed from £10.20 to £7.60"*.
+    - Shop window: **"Show in-game message when a shop price changes"**, e.g. *"Burger Bar 1: Burger price changed from £1.90 to £2.20"*.
+    - Clicking a message opens the ride or shop.
 - Rides without ratings yet are skipped. If the park charges an entrance fee and ride prices are locked, only shops are updated and the ride window shows a warning. In parks without money nothing is changed.
 - If your park uses the same price for an item in all shops, changing it in one shop changes it everywhere (this is how the game works).
 - Custom climates may use other temperature limits than 21 °C / 11 °C; the plugin always uses the default limits.
