@@ -9,6 +9,7 @@
 
 import { calculateRidePrices } from "./calcFunctions"
 import { pluginName } from "./pluginName"
+import { getRideValueAge, hasMultipleOfRideType, parkChargesEntrance } from "./parkInfo"
 import { ageTableCol, rideAgeArray, rideDataArray, rideTableCol } from "./rideData"
 
 /** Key used in the park storage for the list of auto priced ride ids */
@@ -120,11 +121,6 @@ export function ridePricesUnlocked(): boolean {
     return park.getFlag("freeParkEntry") || park.getFlag("unlockAllPrices")
 }
 
-/** @returns true when the park charges an entrance fee */
-function parkChargesEntrance(): boolean {
-    return !(park.getFlag("freeParkEntry") || park.entranceFee == 0)
-}
-
 /** @returns the row index in rideDataArray for an in-game ride type, or -1 */
 function getRideDataIndex(rideType: number): number {
     for (let i = 0; i < rideDataArray.length; i++) {
@@ -141,18 +137,6 @@ function getAgeIndex(age: number): number {
     return 0
 }
 
-/** @returns true when another open ride of the same type exists in the park */
-function hasOtherOpenRideOfSameType(ride: Ride): boolean {
-    const rides = map.rides
-    for (let i = 0; i < rides.length; i++) {
-        const other = rides[i]
-        if (other.id !== ride.id && other.classification == "ride" && other.type == ride.type && other.status === "open") {
-            return true
-        }
-    }
-    return false
-}
-
 /**
  * Calculates the current maximum ticket price of a ride in the park.
  * @returns price in game money units, or undefined if it can't be calculated (e.g. no ratings yet)
@@ -164,8 +148,8 @@ export function getMaxPrice(ride: Ride): number | undefined {
     if (dataIndex < 0) return undefined
 
     const prices = calculateRidePrices(dataIndex, ride.excitement, ride.intensity, ride.nausea,
-        hasOtherOpenRideOfSameType(ride), parkChargesEntrance())
-    const price = prices[getAgeIndex(ride.age)]
+        hasMultipleOfRideType(ride), parkChargesEntrance())
+    const price = prices[getAgeIndex(getRideValueAge(ride))]
     return Math.max(0, Math.min(maxRidePrice, price))
 }
 

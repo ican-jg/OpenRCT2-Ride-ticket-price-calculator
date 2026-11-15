@@ -3,6 +3,7 @@ import { viewDefaults, viewModel } from "./viewModel";
 import { einEnum, errorColorCode, pluginMode } from "./commonTypes";
 import { rideDataArray, rideTableCol, rideAgeArray, ageTableCol } from "./rideData";
 import { getRideListNames, ridesInPark, ridesInParkCol } from "./rideList";
+import { hasMultipleOfRideType, parkChargesEntrance, wouldHaveMultipleOfRideType } from "./parkInfo";
 
 /**
  * User interface actions
@@ -120,20 +121,11 @@ export function onParkRideDropDownChange() {
             break;
         }
     }
-    for (let i = 0; i < ridesInPark.length; i++) {
-        if (ridesInPark[i][ridesInParkCol.rideName] === viewModel.rideName.get()) continue
-        if (ridesInPark[i][ridesInParkCol.rideType] == rideType && map.getRide(ridesInPark[i][ridesInParkCol.inParkId]).status === "open") {
-            viewModel.multipleCheck.set(true)
-            break;
-        }
-        viewModel.multipleCheck.set(false)
-    }
-    if (park.getFlag("freeParkEntry") || park.entranceFee == 0) {
-        viewModel.entranceFeeCheck.set(false)
-    } else {
-        viewModel.entranceFeeCheck.set(true)
-    }
-    
+    // Detect the park conditions the same way the game does
+    const ride = map.getRide(rideID)
+    viewModel.multipleCheck.set(ride ? hasMultipleOfRideType(ride) : false)
+    viewModel.entranceFeeCheck.set(parkChargesEntrance())
+
     getEin(rideID)
     if (isEinInputValid()) {
         callCalcAndUpdatePrices()
@@ -172,9 +164,21 @@ function getEin(inParkRideId: number) {
 /** Calls to update prices after a different ride type is selected */
 export function onRideDropDownChange() {
     changeMode("manual")
+    detectParkConditionsForRideType()
     if (isEinInputValid()) {
         callCalcAndUpdatePrices()
     }
+}
+
+/**
+ * Detects for the manually selected ride type whether a new ride of this type would be
+ * one of multiple open rides of that type, and whether the park charges an entrance fee.
+ * The user can still override both checkboxes afterwards.
+ */
+function detectParkConditionsForRideType() {
+    const rideType = rideDataArray[viewModel.rideSelected.get()][rideTableCol.RideType]
+    viewModel.multipleCheck.set(rideType >= 0 ? wouldHaveMultipleOfRideType(rideType) : false)
+    viewModel.entranceFeeCheck.set(parkChargesEntrance())
 }
 
 /** Changes mode to manual and calls to process EIN change */
@@ -231,6 +235,6 @@ export function resetStats() {
     viewModel.einRatings[einEnum['intensity']].set("0.00")
     viewModel.einRatings[einEnum['nausea']].set("0.00")
     viewModel.multipleCheck.set(false)
-    viewModel.entranceFeeCheck.set(false)
+    viewModel.entranceFeeCheck.set(parkChargesEntrance())
     einInputGuarded = [0, 0, 0]
 }

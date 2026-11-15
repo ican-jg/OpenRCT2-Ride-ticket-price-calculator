@@ -9,6 +9,10 @@ This plugin allows you to calculate the maximum ticket price of any ride, either
 - The current maximum ticket price will be highlighted in silver.
 - Automatic updates when any of the variables relating to the currently selected ride change.
 - Make up your own input to theorize the prices of any ride type with any stats.
+- "Multiple of this ride type in the park" and "Charge for the park entrance" are detected automatically, using the same rules as the game:
+    - Multiple: more than one ride of this type is open (the ride itself included). For a made-up ride type, it is ticked when at least one ride of that type is already open.
+    - Entrance: the park charges an entrance fee greater than 0.
+    - You can still click the checkboxes to override the detected values (this switches to manual input).
 - Automatic ticket prices for the rides you select (see below).
 - Optional in-game message whenever a ticket price is changed automatically.
 
