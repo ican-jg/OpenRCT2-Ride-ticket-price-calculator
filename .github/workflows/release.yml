@@ -1,9 +1,12 @@
 name: Release
 
+# Creates a GitHub release "v<version>" (version from src/pluginVersion.ts)
+# with the built plugin attached, if that release doesn't exist yet.
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,24 +17,42 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Read plugin version
+        id: version
+        run: |
+          VERSION=$(sed -n 's/.*pluginVersion = "\(.*\)".*/\1/p' src/pluginVersion.ts)
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if release exists
+        id: exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.exists.outputs.skip == 'false'
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Download OpenRCT2 API declarations
-        run: curl -sSfL -o lib/openrct2.d.ts https://raw.githubusercontent.com/OpenRCT2/OpenRCT2/develop/distribution/scripting/openrct2.d.ts
-
       - name: Build plugin
-        run: npm run build
+        if: steps.exists.outputs.skip == 'false'
+        run: |
+          npm ci
+          curl -sSfL -o lib/openrct2.d.ts https://raw.githubusercontent.com/OpenRCT2/OpenRCT2/develop/distribution/scripting/openrct2.d.ts
+          npm run build
 
       - name: Create GitHub release
+        if: steps.exists.outputs.skip == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/*.js \
-            --title "$GITHUB_REF_NAME" \
+          gh release create "${{ steps.version.outputs.tag }}" dist/*.js \
+            --target "$GITHUB_SHA" \
+            --title "${{ steps.version.outputs.tag }}" \
             --generate-notes
