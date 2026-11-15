@@ -1,8 +1,9 @@
-import { checkbox, Colour, dropdown, groupbox, horizontal, label, listview, textbox, toggle, twoway, vertical, window } from "openrct2-flexui";
+import { button, checkbox, Colour, dropdown, groupbox, horizontal, label, listview, textbox, toggle, twoway, vertical, window } from "openrct2-flexui";
 import { viewModel } from "./viewModel";
 import { einEnum } from "./commonTypes";
 import { onEINChange, onParkRideDropDownChange, onRideDropDownChange, onCheckboxChange, changeMode } from "./uiActions";
 import { activateTool, closeTool } from "./tool";
+import { autoPriceWindow } from "./autoPriceWindow";
 
 /**
  * User interface shape definition
@@ -14,9 +15,9 @@ export var windowOpen: boolean = false
 
 
 export const mainWindow = window({
-    title: "Ride ticket price calculator (v0.1.2)",
+    title: "Ride ticket price calculator (v0.2.0)",
     width: 300,
-    height: 400,
+    height: 420,
     colours: [windowColour, windowColour],
     onOpen: () => windowOpen = true,
     onClose: () => closeWindow(),
@@ -151,6 +152,13 @@ export const mainWindow = window({
             columns: [{header: "Ride age", ratioWidth: 5}, {header: "Age value", ratioWidth: 3}, {header: "Max ticket price", ratioWidth: 4}],
             items: viewModel.pricesTable,
             scrollbars: "none"
+        }),
+        // AUTOMATIC PRICES
+        button({
+            text: "Automatic ticket prices...",
+            height: 14,
+            tooltip: "Select rides whose ticket price is set to the maximum automatically",
+            onClick: () => autoPriceWindow.open()
         }),
         // ABOUT BOX
         groupbox({
