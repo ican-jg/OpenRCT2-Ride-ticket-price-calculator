@@ -1,5 +1,5 @@
-import { button, checkbox, Colour, compute, horizontal, label, store, twoway, vertical, window, WindowTemplate, WritableStore } from "openrct2-flexui";
-import { getMaxPrice, getShowMessages, setShowMessages, isAutoPriced, onAutoPriceChange, ridePricesUnlocked, setAutoPriced, setAutoPricedMany, updateAllAutoPricedRides } from "./autoPrice";
+import { button, checkbox, Colour, compute, dropdown, horizontal, label, store, twoway, vertical, window, WindowTemplate, WritableStore } from "openrct2-flexui";
+import { canBeAutoPriced, getMaxPrice, getPriceTargets, getShowMessages, setShowMessages, isAutoPriced, onAutoPriceChange, ridePricesUnlocked, setAutoPriced, setAutoPricedMany, updateAllAutoPricedRides } from "./autoPrice";
 
 /**
  * Window with a list of all rides in the park, each with a checkbox to select
@@ -10,11 +10,16 @@ const windowColour = Colour.DarkBrown
 const rowsPerPage = 15
 const priceColumnWidth = 110
 
-/** Ride shown in the list */
+/** Ride or shop shown in the list */
 interface RideEntry {
     id: number
     name: string
+    isShop: boolean
 }
+
+/** Filter options of the list */
+const filterOptions = ["Rides and shops", "Rides only", "Shops and stalls only"]
+const filter = store<number>(0)
 
 /** All rides in the park, sorted by name */
 let rideEntries: RideEntry[] = []
@@ -50,15 +55,22 @@ function formatPrice(price: number): string {
     return context.formatString("{CURRENCY2DP}", price)
 }
 
-/** Reads all rides from the park */
+/** Reads all rides and shops from the park (rides first, then shops, each sorted by name) */
 function loadRides(): void {
     rideEntries = []
+    const showRides = filter.get() !== 2
+    const showShops = filter.get() !== 1
     map.rides.forEach(ride => {
-        if (ride.classification == "ride") {
-            rideEntries.push({ id: ride.id, name: ride.name })
+        if (!canBeAutoPriced(ride)) return
+        const isShop = ride.classification != "ride"
+        if ((isShop && showShops) || (!isShop && showRides)) {
+            rideEntries.push({ id: ride.id, name: ride.name, isShop: isShop })
         }
     })
-    rideEntries.sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+    rideEntries.sort((a, b) => {
+        if (a.isShop !== b.isShop) return a.isShop ? 1 : -1
+        return a.name < b.name ? -1 : a.name > b.name ? 1 : 0
+    })
     pageCount.set(Math.max(1, Math.ceil(rideEntries.length / rowsPerPage)))
     if (currentPage.get() >= pageCount.get()) currentPage.set(pageCount.get() - 1)
 }
@@ -80,17 +92,21 @@ function refreshRows(): void {
 
         const ride = map.getRide(entry.id)
         if (ride) {
-            const current = ride.price.length > 0 ? formatPrice(ride.price[0]) : "-"
-            const max = getMaxPrice(ride)
-            const maxText = max === undefined ? "?" : formatPrice(max)
-            const colour = max !== undefined && ride.price[0] === max ? "{BLACK}" : "{GREY}"
-            row.price.set(`${colour}${current} / ${maxText}`)
+            // Shows the first price the plugin sets: the ticket of a ride, or the main item of a shop
+            const targets = getPriceTargets(ride)
+            const priceIndex = targets.length > 0 ? targets[0].priceIndex : 0
+            const target = targets.length > 0 ? targets[0].price : (entry.isShop ? undefined : getMaxPrice(ride))
+            const currentPrice = ride.price.length > priceIndex ? ride.price[priceIndex] : undefined
+            const current = currentPrice === undefined ? "-" : formatPrice(currentPrice)
+            const targetText = target === undefined ? "?" : formatPrice(target)
+            const colour = target !== undefined && currentPrice === target ? "{BLACK}" : "{GREY}"
+            row.price.set(`${colour}${current} / ${targetText}`)
         } else {
             row.price.set("")
         }
         row.visible.set("visible")
     }
-    warning.set(ridePricesUnlocked() ? "" : "{RED}Ride prices are locked (park charges entry fee)")
+    warning.set(ridePricesUnlocked() ? "" : "{RED}Ride prices are locked (park charges entry fee), only shops are updated")
 }
 
 /** Reloads rides and redraws the list */
@@ -139,7 +155,7 @@ for (let i = 0; i < rowsPerPage; i++) {
 }
 
 export const autoPriceWindow: WindowTemplate = window({
-    title: "Automatic ticket prices",
+    title: "Automatic prices",
     width: 320,
     height: "auto",
     colours: [windowColour, windowColour],
@@ -155,13 +171,19 @@ export const autoPriceWindow: WindowTemplate = window({
     },
     onClose: () => windowIsOpen = false,
     content: [
-        label({
-            text: "Checked rides get their ticket price set to the maximum automatically.",
-            height: 22
+        label({ text: "Rides: set to the maximum ticket price." }),
+        label({ text: "Shops: each item set to its value (depends on temperature)." }),
+        dropdown({
+            items: filterOptions,
+            selectedIndex: twoway(filter),
+            onChange: () => {
+                currentPage.set(0)
+                refresh()
+            }
         }),
         horizontal([
-            label({ text: "{BLACK}Ride" }),
-            label({ width: priceColumnWidth, text: "{BLACK}Current / max" })
+            label({ text: "{BLACK}Ride / shop" }),
+            label({ width: priceColumnWidth, text: "{BLACK}Current / target" })
         ]),
         vertical({
             content: rowWidgets

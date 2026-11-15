@@ -15,7 +15,7 @@ export var windowOpen: boolean = false
 
 
 export const mainWindow = window({
-    title: "Ride ticket price calculator (v0.3.0)",
+    title: "Ride ticket price calculator (v0.4.0)",
     width: 300,
     height: 420,
     colours: [windowColour, windowColour],
@@ -157,9 +157,9 @@ export const mainWindow = window({
         }),
         // AUTOMATIC PRICES
         button({
-            text: "Automatic ticket prices...",
+            text: "Automatic prices...",
             height: 14,
-            tooltip: "Select rides whose ticket price is set to the maximum automatically",
+            tooltip: "Select rides and shops whose prices are set automatically",
             onClick: () => autoPriceWindow.open()
         }),
         // ABOUT BOX
